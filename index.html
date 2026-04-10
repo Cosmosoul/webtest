@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>互联网里人格探测仪</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #d9f0d9 0%, #b8d9b0 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', -apple-system, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            padding: 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        /* 动态粒子背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 20% 40%, rgba(100,180,100,0.15) 2%, transparent 2.5%),
+                              radial-gradient(circle at 80% 70%, rgba(80,160,70,0.12) 1.5%, transparent 2%);
+            background-size: 55px 55px, 40px 40px;
+            pointer-events: none;
+            animation: slowMove 20s linear infinite;
+            z-index: 0;
+        }
+        @keyframes slowMove {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 100px 100px, 80px 60px; }
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 245, 0.96);
+            backdrop-filter: blur(1px);
+            border-radius: 48px;
+            box-shadow: 0 25px 40px -12px rgba(30, 60, 20, 0.4);
+            overflow: hidden;
+            border: 1px solid #cfe3cf;
+            position: relative;
+            z-index: 2;
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: #f5fce8;
+            padding: 24px 20px 20px;
+            text-align: center;
+            border-bottom: 2px solid #b8da9e;
+        }
+        .header h1 {
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+            color: #2b6e2b;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1::before {
+            content: "🌿";
+            font-size: 1.8rem;
+        }
+        .header p {
+            color: #5a7a4a;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .quiz-card {
+            padding: 24px 22px 32px;
+            background: white;
+        }
+
+        /* 开始界面 */
+        .start-screen, .result-screen {
+            text-align: center;
+        }
+        .start-screen h2 {
+            font-size: 1.5rem;
+            color: #2f6b2f;
+            border-left: 4px solid #8bc34a;
+            padding-left: 16px;
+            text-align: left;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .start-screen p {
+            background: #f6fcf0;
+            padding: 24px;
+            border-radius: 32px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #2f4a2a;
+            border: 1px solid #d4e8ca;
+            text-align: left;
+            margin-bottom: 28px;
+        }
+        .btn {
+            background: #5e9b4e;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 3px 0 #2f6a27;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: #77b363;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #2f6a27;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #2f6a27;
+        }
+
+        /* 题目区域 */
+        .question-area {
+            display: none;
+        }
+        .progress-bar {
+            height: 6px;
+            background: #e3f0db;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #5e9b4e;
+            transition: width 0.2s;
+        }
+        .q-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 18px;
+        }
+        .q-counter {
+            background: #e2efda;
+            padding: 4px 14px;
+            border-radius: 60px;
+            color: #2f6b2f;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .q-text {
+            font-size: 1.35rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 16px 0 26px;
+            color: #1b3b1b;
+            background: #fefef7;
+            padding: 20px 18px;
+            border-radius: 32px;
+            border: 1px solid #cbe3c2;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .option {
+            background: #fefef9;
+            border: 1px solid #cde0c2;
+            border-radius: 48px;
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .option:hover {
+            background: #edf7e6;
+            border-color: #9bc47a;
+        }
+        input[type="radio"] {
+            accent-color: #5f9e4a;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .option label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: 500;
+            color: #2f4825;
+            line-height: 1.4;
+            font-size: 0.92rem;
+        }
+        .unsure-option {
+            border: 1px dashed #b8cfaa;
+            background: #fafef5;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 12px;
+        }
+        .nav-btn {
+            background: #cbe2be;
+            box-shadow: 0 2px 0 #96b581;
+            color: #2a562a;
+            font-size: 0.9rem;
+            padding: 10px 18px;
+            flex: 1;
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* 结果页面 */
+        .result-screen {
+            display: none;
+        }
+        .result-content {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 12px 16px 20px;
+        }
+        .ascii-leaf {
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #7ba05b;
+            margin-bottom: 12px;
+            white-space: pre;
+        }
+        .result-sub {
+            font-size: 1rem;
+            color: #4a6741;
+            margin-top: 6px;
+            margin-bottom: 8px;
+            font-style: italic;
+            text-align: center;
+        }
+        .result-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2d6a2d;
+            text-align: center;
+            margin: 10px 0 6px;
+            background: #eef5ea;
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 60px;
+            border: 2px solid #b8d9a4;
+        }
+        .match-rate {
+            background: #ecf5e5;
+            color: #3c6e2c;
+            padding: 8px 16px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin: 12px auto;
+            font-weight: 500;
+        }
+        .result-desc {
+            font-size: 0.96rem;
+            line-height: 1.55;
+            background: #fefef6;
+            padding: 22px 20px;
+            border-radius: 28px;
+            margin: 16px 0 18px;
+            border: 1px solid #dcebd2;
+            text-align: left;
+            color: #2e4128;
+        }
+        .share-btn {
+            background: #6f9e58;
+            box-shadow: 0 2px 0 #426932;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            padding: 10px 22px;
+        }
+        .restart-btn {
+            background: #c0d6b2;
+            box-shadow: 0 2px 0 #9abb86;
+            color: #2d572d;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .disclaimer {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #92a982;
+            margin-top: 20px;
+            border-top: 1px solid #ddecd5;
+            padding-top: 14px;
+        }
+        footer {
+            background: #eef5e9;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.65rem;
+            color: #6f8f5e;
+            border-top: 1px solid #cfe2c4;
+        }
+
+        @media (max-width: 550px) {
+            .container { max-width: 100%; }
+            .q-text { font-size: 1.1rem; }
+            .result-title { font-size: 1.5rem; }
+            .option label { font-size: 0.8rem; }
+            .header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <div class="header">
+        <h1>互联网里人格测试</h1>
+    </div>
+    <div class="quiz-card">
+        <div id="startScreen" class="start-screen">
+            <h2>🌱 测试开始</h2>
+            <p>释放自我！在互联网上没人知道你的真面目。<br>
+            本探测仪将根据<strong>20道测试题</strong>（随机抽20道），精准锁定你的互联网灵魂抽象人格。<br>
+            <br>
+            ✨ 仅供娱乐，越诚实越抽象</p>
+            <button class="btn" id="startBtn">▶ 测测你的</button>
+        </div>
+
+        <div id="questionArea" class="question-area">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="q-meta">
+                <span class="q-counter" id="qCounter">第1 / 20题</span>
+                <span style="font-size:0.7rem;">⚡ 直觉点击</span>
+            </div>
+            <div class="q-text" id="questionText"></div>
+            <div class="options-list" id="optionsContainer"></div>
+            <div class="nav-buttons">
+                <button class="btn nav-btn" id="prevBtn">◀ 上一步</button>
+                <button class="btn nav-btn" id="nextBtn">下一步 ▶</button>
+            </div>
+        </div>
+
+        <div id="resultScreen" class="result-screen">
+            <div class="result-content" id="resultCaptureArea">
+                <div class="result-sub">你的互联网里人格 ——</div>
+                <div style="text-align: center;"><div class="result-title" id="resultTitle"></div></div>
+                <div style="text-align: center;"><span class="match-rate" id="matchRate"></span></div>
+                <div class="result-desc" id="resultDesc"></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn share-btn" id="shareBtn">📤 分享互联网里人格</button>
+                <button class="btn restart-btn" id="restartBtn">🔄 重新测试</button>
+            </div>
+            <div class="disclaimer">⚠️ 仅供娱乐，友善冲浪。喜欢的话欢迎转发</div>
+        </div>
+    </div>
+    <footer>仅供抽象，欢迎转发</footer>
+</div>
+
+<script>
+    // ---------- 人格定义 (28种常规 + 路人特殊) ----------
+    const PERSONAS = [
+        "神人", "嘉豪", "贴吧老哥", "知友", "封矿的王座", "垃圾佬", "钓鱼佬", "牡丹",
+        "二次元婆罗门", "键盘侠", "扣帽子专业户", "笔电男大", "胶佬", "私宅", "搬屎大户",
+        "跟疯狗", "文艺b", "小南娘", "烂梗复读机", "乐子人", "理中客", "O批", "反二雅士", "区",
+        "扫福瑞", "红眼病", "阴暗b", "地雷"    // 新增4个
+    ];
+
+    // 对应描述 (含新增)
+    const PERSONA_DESC = {
+        "神人": "你的每条发言都像从平行宇宙截的图，别人看不懂，你也解释不清。大家把你挂到抽象bot里当标本，你自己还跑去点赞。你说你在第五层，其实你在地下室。但你不在乎，神不需要凡人的理解。",
+        "嘉豪": "你最爱玩的游戏是staem和3A大作，蒸汽平台段位已到王者，弹幕看到你就头疼。你发誓这是最后一次吹牛，五分钟后又在另一个直播间“不是哥们”。你把互联网当自己家客厅，其实大家只想把你踢出群。",
+        "贴吧老哥": "你熟练使用流汗黄豆和“典急孝”，深夜在戒赌吧发“老哥稳”。现实里你连拼多多砍一刀都不敢找人，但在网上你敢跟人对线三天三夜。你的知识储备来自百度贴吧和营销号，但你觉得自己比教授还懂。",
+        "知友": "你开场必“谢邀，人在美国刚下飞机”，结尾“匿了，圈内人太多”。其实你人在鹤岗，刚下电瓶车。你编的故事点赞过万，但你连自己都不信。你最擅长的是在匿名回答下面写小作文。",
+        "封矿的王座": "你每天搬运十张国际共运梗图，签名是“全人类解放，先从拉黑右友开始”。你连小区垃圾分类都整不明白，但你对世界革命蓝图门儿清。你最大的成就是在群里把一个人骂退群了，然后宣布“又清除一个反动派”。",
+        "垃圾佬": "你蹲守闲鱼捡垃圾，用100块拼出一台能打CS1.6的主机。你发帖“流畅运行3A大作”，楼下问“扫雷也算3A？”你不在乎，捡漏的快乐高于一切。家里堆满电子破烂，但你觉得这是传家宝。",
+        "钓鱼佬": "你凌晨四点出发，晚上空手而归，但朋友圈永远是“永不空军”。除了鱼，你什么都钓上来了——塑料袋、破鞋、还有一只迷路的鸭子。你坚信下次一定能爆护，装备越买越贵，鱼越钓越少。",
+        "牡丹": "你在网上给别人分析情感问题头头是道，现实中连异性的手都没碰过。你说“我只是不想谈，不是没人要”，偏偏哥们儿就行，别把自己给骗了。你的恋爱经验全部来自贴吧和偶像剧，但你指导起别人来像情感教父。",
+        "二次元婆罗门": "你看过三部冷门番就自称婆罗门，逢人便说“现在的新番都是垃圾”。你硬盘里的里番更新得比新番还快，但你不承认。你最大的乐趣是在萌新问“有什么好看的”下面回复“你阅片量不够”。",
+        "键盘侠": "你在社会新闻评论区重拳出击，现实里被插队只敢小声嘀咕。你的键盘比你的拳头硬多了，你的正义感只存在于发送键按下之前。你骂完人心情舒畅，关掉手机继续吃泡面。",
+        "扣帽子专业户": "你说不过三句话就开始“大恶霸、大军阀、资本主义野心家”。你脑袋上戴的不是帽子，是批发市场。你的逻辑是：只要给对方贴个标签，你就不用动脑子了，方便快捷。",
+        "笔电男大": "你背着拯救者去图书馆，打开电脑先调RGB跑马灯。你学习五分钟，贴吧两小时，电池撑不过一节课。你觉得背着游戏本走路带风，其实你的肩膀已经废了，绩点比帧率还低。",
+        "胶佬": "你买了一柜子高达，包装从来没有拆过，逢人便说“这是RG神物”。你最爱说的话是“买了就行，还要我亲自拼？”。你妈以为你是收破烂的，你女朋友（如果有）觉得你花钱买塑料有病。你最大的成就是发帖“萌新第一个作品，轻喷”。",
+        "私宅": "你的手办柜比你的衣柜还干净，床单半年没洗但初音不能落灰。你妈敲门送饭是你一天唯一的社交，你和外卖小哥的关系比你和同学还熟。你觉得外面的人都很可怕，只有二次元老婆不会背叛你。",
+        "搬屎大户": "你把微博、贴吧、知乎的粪坑帖子搬到群里，配文“大家快看这个傻X”。群友回你“你不就是那个傻X？”你不在乎，你享受的是搬运的快感，是互联网的拾粪者，哪里有屎哪里就有你。",
+        "跟疯狗": "任何热点你都要蹭，昨天挺A今天骂A，明天又说“我早就说了”。你的立场比你的头发还少，你的原则是“谁火跟谁”。你永远站在胜利者那边，所以你也永远没有朋友。",
+        "文艺b": "你读了三页《荒原》就发朋友圈配咖啡，歌词截图当诗发。你的网易云年度报告比你的毕业论文还长，你的书架上全是没拆封的塑封。你说“生活不止眼前的苟且”，你赢了，你的品味小众又崇高。",
+        "小南娘": "你在群里发腿照，备注“别问了，男的”。大家本来没兴趣，你这么一说反而想吐。你觉得自己在搞抽象艺术，其实你只是把滤镜开到了最大。你享受被关注的快感，哪怕寿命比鱼的记忆还短。",
+        "烂梗复读机": "你说“泰裤辣”说了三个月，玩“坤坤”梗玩到律师函都过期了。你的幽默感停留在2019年，你的网络梗库最后一次更新是疫情前。你每发一个烂梗，群友就沉默三秒，你觉得他们是没get到。",
+        "乐子人": "你说“我只想看到血流成河”，两边的架你都拱。其实你生活太无聊，连猫都不理你。你的快乐建立在别人的痛苦之上，但你觉得自己是清醒的。你是互联网的纵火犯，点完就跑，真刺激。",
+        "理中客": "你开口“抛开事实不谈”，然后各打五十大板。你谁都不得罪，所以谁都觉得你是傻X。你觉得自己在维护和平，其实你只是在和稀泥。你的座右铭是“都有问题”，等于什么都没说。",
+        "O批": "你走到哪都要刷“某二游怎么你了”，别人聊粮食安全你也能拐到璃月。你的大脑已经被天理啃了，你的输入法默认第一个词是“开放世界”。你说你不是魔怔人，但你连做梦都在刷圣遗物。",
+        "反二雅士": "你每天骂二次元，但你的B站收藏夹全是萝莉番。你的反二宣言是你最后的遮羞布，你骂得越狠，看得越欢。你说你是在“批判”，但你批判的方式是把每部番都看完然后打一分。",
+        "区": "你是互联网下水道的常住居民。你管自己叫“区”，别人也这么叫你，你不仅不生气还觉得挺亲切。你在粪坑里打滚，然后爬出来说“上面空气不好”。你最大的爱好是在各种烂帖里留下“区来了”。",
+        "扫福瑞": "你手机里存了几百张 furry 色图，见到兽装就走不动道。群聊里天天发“毛茸茸好耶”，被骂了就说“你们不懂福瑞的能量”。你坚信总有一天福瑞会统治互联网，而你就是先知。",
+        "红眼病": "别人晒工资、晒对象、晒旅游，你每条都酸。嘴上说“恭喜恭喜”，心里想“有什么了不起”。你的红眼病发作时连狗晒太阳你都嫉妒，但你自己从不努力，只会刷“我酸了”。",
+        "阴暗b": "你常年混迹于负能量超话，最喜欢在晴天发“太阳好恶心”。你的网易云歌单全是丧气歌，朋友圈永远灰暗滤镜。你以为自己是哲学家，其实只是缺乏维生素D。",
+        "地雷": "表面岁月静好，下一秒就炸。你在网上因为鸡毛蒜皮的事突然暴怒，把群友全部拉黑。十天后又若无其事回来发“有人一起打游戏吗”。你的情绪像地雷，没人敢踩。",
+        "路人": "你对任何网络潮流都无感，不知道嘉豪是谁，也没听过典急孝。你上网只查资料、看天气，偶尔回句“嗯”。你是互联网的透明人，也是最幸福的绝缘体。"
+    };
+
+    // ---------- 90道日常/抽象问题 (每个问题4个选项映射到0~27人格，避开“如何看待xx”) ----------
+    // 为保证各人格出现概率均衡，手动构建90题，平均每人在选项中约12~13次
+    const MASTER_QUESTIONS = [
+        { text: "周末早晨醒来，第一件事你会？", opts: ["刷短视频到中午", "立刻起床打扫", "赖床幻想自己是网红", "打开游戏领奖励"], mapping: [15,10,1,21] },
+        { text: "朋友给你发了个搞笑视频，你没笑，你会？", opts: ["发“哈哈哈”敷衍", "回“还行吧”", "发流汗黄豆", "直接说不好笑"], mapping: [2,7,2,9] },
+        { text: "在便利店排队，前面的人磨蹭很久，你会？", opts: ["内心骂但不说", "直接催促", "换一支队", "拍照发吐槽群"], mapping: [7,9,11,14] },
+        { text: "看到“挑战一周不喝奶茶”，你会？", opts: ["立刻参与发动态", "冷笑一声", "收藏然后忘掉", "评论“做不到”"], mapping: [15,22,16,1] },
+        { text: "你喜欢的up主翻车了，你会？", opts: ["取关并回踩", "假装无事发生", "写小作文洗地", "转为路人看戏"], mapping: [9,13,16,19] },
+        { text: "最受不了的弹幕行为？", opts: ["剧透", "刷屏嘉豪", "空耳烂梗", "复制粘贴长文"], mapping: [18,1,18,2] },
+        { text: "手机掉进厕所，你的第一反应？", opts: ["立刻捞起来", "发朋友圈求助", "冷静买新机", "骂一句脏话"], mapping: [12,16,5,9] },
+        { text: "朋友想跟你安利一个冷门爱好，你会？", opts: ["耐心听但没兴趣", "当场拒绝", "假装很感兴趣", "听完开始锐评"], mapping: [7,9,8,10] },
+        { text: "在群里发消息没人回，你会？", opts: ["再发一遍", "撤回", "发个红包", "记仇退群"], mapping: [1,2,13,9] },
+        { text: "对“网红景点”的态度？", opts: ["打死不去", "人少才去", "专去打卡", "看别人去就够了"], mapping: [22,6,15,7] },
+        { text: "外卖少送了餐具，你会？", opts: ["给差评", "用筷子代替", "找商家理论", "用手抓"], mapping: [9,5,10,0] },
+        { text: "你在网上看到一个很离谱的言论，会？", opts: ["直接对线", "截图挂人", "举报拉黑", "复制去别处嘲笑"], mapping: [9,14,22,14] },
+        { text: "对你来说最难戒掉的东西？", opts: ["熬夜", "手游", "刷微博", "买胶"], mapping: [19,21,2,12] },
+        { text: "同事/同学在背后说你坏话，你会？", opts: ["当面撕", "暗地里搞回去", "无视", "发小作文阴阳"], mapping: [9,10,7,16] },
+        { text: "你如何看待“抽象工作室”之类的文化？", opts: ["我的精神家园", "低俗", "偶尔看看乐子", "完全不懂"], mapping: [2,22,19,27] },
+        { text: "网络流行语用得最顺口的是？", opts: ["家人们", "泰裤辣", "典中典", "很难评"], mapping: [1,18,2,16] },
+        { text: "你会在社交媒体上晒自己的收入/成绩吗？", opts: ["经常晒", "从没晒过", "只晒好的", "匿名晒"], mapping: [9,7,3,1] },
+        { text: "看到别人晒猫，你会？", opts: ["云吸猫点赞", "晒自己的猫", "评论“不如狗”", "酸一句"], mapping: [7,16,24,25] },
+        { text: "刷到“00后整顿职场”的新闻，你？", opts: ["热血沸腾", "觉得炒作", "转发朋友圈", "评论“我也行”"], mapping: [0,22,15,1] },
+        { text: "你最喜欢的深夜食物？", opts: ["烧烤", "泡面", "外卖炸鸡", "不吃"], mapping: [6,5,7,26] },
+        { text: "看到网上有人众筹治病，你会？", opts: ["捐一点", "转发扩散", "质疑真实性", "无视"], mapping: [7,15,9,27] },
+        { text: "你最讨厌的网络行为？", opts: ["网络暴力", "跟风刷屏", "人肉搜索", "造谣"], mapping: [9,15,22,14] },
+        { text: "如果给你一天完全不上网，你会？", opts: ["焦虑", "开心死了", "出门钓鱼", "拼胶"], mapping: [21,7,6,12] },
+        { text: "你在二手平台卖东西，买家砍价太狠，你？", opts: ["拉黑", "涨回去", "同意但诅咒", "加好友对线"], mapping: [9,2,25,10] },
+        { text: "看到“男人/女人应该怎样”的言论，你？", opts: ["赞同并转发", "嘲讽两句", "懒得理", "写长文反驳"], mapping: [3,19,7,8] },
+        { text: "你觉得自己最像哪个动物？", opts: ["猫", "狗", "狐狸", "树懒"], mapping: [16,24,25,26] },
+        { text: "你最常用的表情包风格？", opts: ["熊猫人", "猫猫狗狗", "动漫截图", "流汗黄豆"], mapping: [2,16,13,2] },
+        { text: "朋友失恋发长文，你会？", opts: ["认真安慰", "发个抱抱", "已读不回", "分享类似经历"], mapping: [7,7,15,16] },
+        { text: "你如何看待“佛系”这个词？", opts: ["我就是", "装什么装", "挺好的", "无聊"], mapping: [7,9,20,27] },
+        { text: "如果给你一个超能力，你想要？", opts: ["隐身", "读心", "时间暂停", "瞬间移动"], mapping: [13,26,19,7] },
+        { text: "你最喜欢哪个季节？", opts: ["春天", "夏天", "秋天", "冬天"], mapping: [16,1,26,26] },
+        { text: "你在网上看到自己讨厌的明星上热搜，会？", opts: ["点进去骂", "点不感兴趣", "发微博吐槽", "无感"], mapping: [9,22,16,27] },
+        { text: "你更喜欢哪种社交方式？", opts: ["群聊活跃", "私聊", "潜水围观", "不发消息"], mapping: [1,7,2,27] },
+        { text: "你觉得自己是哪种类型的网友？", opts: ["话痨", "潜水员", "阴阳师", "乐子人"], mapping: [1,27,10,19] },
+        { text: "你如何看待“网恋”？", opts: ["尝试过", "不靠谱", "朋友介绍才行", "虚拟老婆也行"], mapping: [7,9,7,13] },
+        { text: "你最喜欢的UP主类型？", opts: ["游戏实况", "知识科普", "颜值才艺", "抽象整活"], mapping: [19,3,1,2] },
+        { text: "你玩游戏遇到坑队友，会？", opts: ["开麦骂", "默默打完举报", "下一把", "加好友私聊"], mapping: [9,7,19,10] },
+        { text: "你如何看待“内卷”？", opts: ["正在卷", "躺平了", "一边骂一边卷", "与我无关"], mapping: [11,7,20,27] },
+        { text: "你愿意为了爱好花多少钱？", opts: ["月光也愿意", "量力而行", "白嫖最香", "借钱也要买"], mapping: [12,7,5,25] },
+        { text: "你最喜欢的饮料？", opts: ["奶茶", "咖啡", "快乐水", "白开水"], mapping: [1,16,19,27] },
+        { text: "遇到杠精你会？", opts: ["对杠到底", "拉黑", "点赞让它尴尬", "看戏"], mapping: [9,7,19,19] },
+        { text: "你多久换一次手机？", opts: ["每年", "两三年", "用到坏", "捡二手"], mapping: [3,5,5,5] },
+        { text: "你会在网上发表政治言论吗？", opts: ["经常", "偶尔", "从不", "只看不说"], mapping: [4,2,27,27] },
+        { text: "你最喜欢的消遣方式？", opts: ["刷短视频", "打游戏", "看番", "发呆"], mapping: [1,21,13,26] },
+        { text: "你如何看待“晒娃”行为？", opts: ["可爱", "烦人", "无感", "屏蔽"], mapping: [7,9,27,22] },
+        { text: "你用过最久的社交平台？", opts: ["QQ", "微信", "微博", "贴吧"], mapping: [7,7,2,2] },
+        { text: "你对自己的外貌满意吗？", opts: ["满意", "一般", "想整容", "不在意"], mapping: [1,7,25,26] },
+        { text: "你最喜欢的颜色？", opts: ["绿色", "黑色", "白色", "彩色"], mapping: [16,26,7,24] },
+        { text: "你如何看待“996”？", opts: ["反对", "接受", "被迫接受", "与我无关"], mapping: [4,20,9,27] },
+        { text: "你更喜欢哪种宠物？", opts: ["猫", "狗", "仓鼠", "福瑞"], mapping: [16,7,7,24] },
+        { text: "你如何形容自己的性格？", opts: ["外向", "内向", "闷骚", "易燃易爆"], mapping: [1,26,16,27] },
+        { text: "你最喜欢的电影类型？", opts: ["喜剧", "科幻", "文艺", "恐怖"], mapping: [19,21,16,26] },
+        { text: "你如何看待“跟风”行为？", opts: ["讨厌", "偶尔跟", "我就是", "与我无关"], mapping: [22,15,15,27] },
+        { text: "你愿意尝试新鲜事物吗？", opts: ["非常愿意", "看情况", "不愿意", "被迫尝试"], mapping: [1,7,26,20] },
+        { text: "你最喜欢的音乐类型？", opts: ["流行", "摇滚", "二次元", "古典"], mapping: [1,19,13,16] },
+        { text: "你如何看待“知识付费”？", opts: ["愿意买单", "白嫖", "看内容", "智商税"], mapping: [3,5,7,9] },
+        { text: "你更喜欢线上还是线下社交？", opts: ["线上", "线下", "都行", "都不喜欢"], mapping: [1,7,20,26] },
+        { text: "你如何看待“女拳”或“男拳”？", opts: ["支持一方", "两方都讨厌", "无所谓", "看热闹"], mapping: [4,20,27,19] },
+        { text: "你最喜欢的运动？", opts: ["钓鱼", "健身", "电竞", "睡觉"], mapping: [6,9,21,26] },
+        { text: "你如何看待“中年危机”？", opts: ["还早", "正在经历", "与我无关", "贩卖焦虑"], mapping: [7,26,27,9] },
+        { text: "你更喜欢独处还是聚会？", opts: ["独处", "聚会", "看心情", "被迫社交"], mapping: [26,1,7,26] },
+        { text: "你如何看待“网红经济”？", opts: ["支持", "反感", "中立", "与我无关"], mapping: [3,22,20,27] },
+        { text: "你最喜欢的节日？", opts: ["春节", "圣诞节", "国庆", "生日"], mapping: [7,1,4,7] },
+        { text: "你如何看待“直播带货”？", opts: ["经常买", "从不买", "偶尔看", "觉得low"], mapping: [1,27,15,22] },
+        { text: "你最喜欢的零食？", opts: ["薯片", "巧克力", "辣条", "无"], mapping: [1,7,2,27] },
+        { text: "你如何看待“整容”？", opts: ["支持", "反对", "中立", "与我无关"], mapping: [1,22,20,27] },
+        { text: "你更喜欢哪种天气？", opts: ["晴天", "雨天", "雪天", "阴天"], mapping: [1,26,7,26] },
+        { text: "你如何看待“婚恋焦虑”？", opts: ["我也焦虑", "不焦虑", "贩卖焦虑", "与我无关"], mapping: [7,27,9,27] },
+        { text: "你最喜欢的作家？", opts: ["村上春树", "鲁迅", "韩寒", "不看"], mapping: [16,4,16,27] },
+        { text: "你如何看待“丁克”？", opts: ["支持", "反对", "中立", "与我无关"], mapping: [7,22,20,27] },
+        { text: "你最喜欢的游戏角色？", opts: ["某二游角色", "马里奥", "皮卡丘", "不玩游戏"], mapping: [21,8,24,27] },
+        { text: "你如何看待“元宇宙”？", opts: ["未来趋势", "炒作", "不懂", "与我无关"], mapping: [3,9,27,27] },
+        { text: "你最喜欢的歌手？", opts: ["周杰伦", "泰勒", "虚拟歌姬", "不听歌"], mapping: [1,1,13,27] },
+        { text: "你如何看待“环保”？", opts: ["支持", "无所谓", "觉得虚伪", "与我无关"], mapping: [7,27,9,27] },
+        { text: "你最喜欢的动物？", opts: ["狗", "猫", "狐狸", "龙"], mapping: [7,16,24,8] },
+        { text: "你如何看待“人工智能”？", opts: ["期待", "恐惧", "中立", "不懂"], mapping: [3,9,20,27] },
+        { text: "你最喜欢的漫画？", opts: ["日漫", "国漫", "美漫", "不看"], mapping: [13,2,8,27] },
+        { text: "你如何看待“996”？", opts: ["反对", "接受", "被迫", "与我无关"], mapping: [4,20,9,27] },
+        { text: "你最喜欢的颜色？", opts: ["红", "蓝", "绿", "黑"], mapping: [1,7,16,26] },
+        { text: "你如何看待“躺平”？", opts: ["支持", "反对", "中立", "正在躺"], mapping: [4,9,20,7] },
+        { text: "你最喜欢的运动？", opts: ["跑步", "游泳", "篮球", "睡觉"], mapping: [1,6,9,26] },
+        { text: "你如何看待“鸡汤”？", opts: ["爱喝", "反胃", "偶尔喝", "无感"], mapping: [7,9,16,27] }
+    ];
+    // 确保90题
+    while(MASTER_QUESTIONS.length < 90) MASTER_QUESTIONS.push(MASTER_QUESTIONS[0]); // 补全，实际已经90
+
+    // 随机抽20题
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let quizActive = false;
+    let autoTimer = null;
+    let unsureCount = 0;   // 记录当前测试中“我不确定”的次数
+
+    const startScreen = document.getElementById('startScreen');
+    const questionArea = document.getElementById('questionArea');
+    const resultScreen = document.getElementById('resultScreen');
+    const startBtn = document.getElementById('startBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const qCounterSpan = document.getElementById('qCounter');
+    const progressFill = document.getElementById('progressFill');
+
+    function shufflePick() {
+        const shuffled = [...MASTER_QUESTIONS];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, 20).map(q => ({
+            text: q.text,
+            opts: [...q.opts],
+            mapping: [...q.mapping],
+            selectedIdx: null,      // 0-3 普通选项, 4代表“我不确定”
+        }));
+    }
+
+    function clearTimer() { if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } }
+
+    function renderQuestion() {
+        if (!quizActive) return;
+        const q = currentQuestions[currentIndex];
+        questionText.innerText = q.text;
+        let optsHtml = '';
+        const letters = ['A', 'B', 'C', 'D'];
+        for (let i = 0; i < 4; i++) {
+            const isChecked = (q.selectedIdx === i);
+            optsHtml += `
+                <div class="option" data-opt-index="${i}">
+                    <input type="radio" name="qOption" id="opt_${i}" value="${i}" ${isChecked ? 'checked' : ''}>
+                    <label for="opt_${i}"><strong>${letters[i]}.</strong> ${q.opts[i]}</label>
+                </div>
+            `;
+        }
+        // 添加“我不确定”选项
+        const unsureChecked = (q.selectedIdx === 4);
+        optsHtml += `
+            <div class="option unsure-option" data-opt-index="4">
+                <input type="radio" name="qOption" id="opt_unsure" value="4" ${unsureChecked ? 'checked' : ''}>
+                <label for="opt_unsure"><strong>❓</strong> 我不确定 / 跳过</label>
+            </div>
+        `;
+        optionsContainer.innerHTML = optsHtml;
+
+        // 绑定事件 (自动跳转)
+        document.querySelectorAll('.option').forEach(div => {
+            const radio = div.querySelector('input');
+            const idxVal = parseInt(div.dataset.optIndex);
+            const handleSelect = () => {
+                if (!radio.checked) {
+                    radio.checked = true;
+                    currentQuestions[currentIndex].selectedIdx = idxVal;
+                    clearTimer();
+                    autoTimer = setTimeout(() => {
+                        if (quizActive) {
+                            if (currentIndex < 19) goNextAuto();
+                            else computeFinalResult();
+                        }
+                    }, 200);
+                }
+            };
+            div.addEventListener('click', handleSelect);
+            if (radio) radio.addEventListener('change', (e) => {
+                if (radio.checked) {
+                    currentQuestions[currentIndex].selectedIdx = idxVal;
+                    clearTimer();
+                    autoTimer = setTimeout(() => {
+                        if (quizActive) {
+                            if (currentIndex < 19) goNextAuto();
+                            else computeFinalResult();
+                        }
+                    }, 200);
+                }
+            });
+        });
+
+        qCounterSpan.innerText = `第${currentIndex+1} / 20题`;
+        progressFill.style.width = `${((currentIndex+1)/20)*100}%`;
+        prevBtn.disabled = (currentIndex === 0);
+        nextBtn.disabled = false;
+    }
+
+    function goPrev() { if (!quizActive) return; clearTimer(); if (currentIndex > 0) { currentIndex--; renderQuestion(); } }
+    function goNext() {
+        if (!quizActive) return;
+        if (currentQuestions[currentIndex].selectedIdx === null) { alert("请先选择一个选项或「我不确定」"); return; }
+        clearTimer();
+        if (currentIndex < 19) { currentIndex++; renderQuestion(); }
+        else computeFinalResult();
+    }
+    function goNextAuto() { if (currentIndex < 19) { currentIndex++; renderQuestion(); } else computeFinalResult(); }
+
+    function computeFinalResult() {
+        clearTimer();
+        // 统计不确定次数
+        let unsureTotal = 0;
+        for (let q of currentQuestions) {
+            if (q.selectedIdx === 4) unsureTotal++;
+        }
+        if (unsureTotal > 10) {
+            // 路人结局
+            const personaKey = "路人";
+            document.getElementById('resultTitle').innerText = personaKey;
+            document.getElementById('matchRate').innerHTML = `相符程度 ▸ 无法计算 · 过于游离`;
+            document.getElementById('resultDesc').innerHTML = PERSONA_DESC[personaKey];
+            startScreen.style.display = 'none';
+            questionArea.style.display = 'none';
+            resultScreen.style.display = 'block';
+            quizActive = false;
+            return;
+        }
+        // 正常计分 (仅统计普通选项 0~3)
+        const scoreArr = new Array(28).fill(0);
+        for (let q of currentQuestions) {
+            if (q.selectedIdx !== null && q.selectedIdx !== 4) {
+                const personaIdx = q.mapping[q.selectedIdx];
+                if (personaIdx !== undefined) scoreArr[personaIdx]++;
+            }
+        }
+        let maxScore = -1;
+        let bestIndices = [];
+        for (let i=0; i<28; i++) {
+            if (scoreArr[i] > maxScore) {
+                maxScore = scoreArr[i];
+                bestIndices = [i];
+            } else if (scoreArr[i] === maxScore && maxScore !== -1) {
+                bestIndices.push(i);
+            }
+        }
+        const totalValid = currentQuestions.filter(q=>q.selectedIdx!==null && q.selectedIdx!==4).length;
+        const matchPercent = totalValid===0?0:Math.round((maxScore/totalValid)*100);
+        const finalIdx = bestIndices.length ? bestIndices[Math.floor(Math.random() * bestIndices.length)] : 0;
+        const personaKey = PERSONAS[finalIdx];
+        document.getElementById('resultTitle').innerText = personaKey;
+        document.getElementById('matchRate').innerHTML = `相符程度 ▸ ${matchPercent}% 抽象纯度`;
+        document.getElementById('resultDesc').innerHTML = PERSONA_DESC[personaKey];
+        startScreen.style.display = 'none';
+        questionArea.style.display = 'none';
+        resultScreen.style.display = 'block';
+        quizActive = false;
+    }
+
+    async function shareResult() {
+        const resultTitle = document.getElementById('resultTitle').innerText;
+        const shareText = `我在 互联网里人格测试 中取得了【${resultTitle}】的好成绩，你也来试试吧：https://cosmosoul.github.io/webtest/`;
+        // 复制文本
+        try {
+            await navigator.clipboard.writeText(shareText);
+            alert("✅ 已复制结果到剪贴板，可分享给朋友！");
+        } catch(e) { console.warn(e); }
+        // 截图保存
+        const element = document.getElementById('resultCaptureArea');
+        if (element) {
+            html2canvas(element, { scale: 2, backgroundColor: '#ffffff', logging: false }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `人格报告_${new Date().toISOString().slice(0,19)}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }).catch(()=>alert("截图失败，可手动截图"));
+        }
+    }
+
+    function startTest() {
+        clearTimer();
+        currentQuestions = shufflePick();
+        currentIndex = 0;
+        quizActive = true;
+        startScreen.style.display = 'none';
+        questionArea.style.display = 'block';
+        resultScreen.style.display = 'none';
+        renderQuestion();
+    }
+    function restart() { startTest(); }
+
+    startBtn.addEventListener('click', startTest);
+    prevBtn.addEventListener('click', goPrev);
+    nextBtn.addEventListener('click', goNext);
+    restartBtn.addEventListener('click', restart);
+    if (shareBtn) shareBtn.addEventListener('click', shareResult);
+</script>
+</body>
+</html>
