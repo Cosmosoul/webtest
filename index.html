@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>互联网人格探测仪 | 赛博回声</title>
+    <!-- html2canvas 截图 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #e6f3e6;
+            background-image: repeating-linear-gradient(0deg, rgba(100,150,100,0.08) 0px, rgba(100,150,100,0.08) 2px, transparent 2px, transparent 8px);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', -apple-system, 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            padding: 16px;
+        }
+
+        /* 主容器 白绿清新 */
+        .container {
+            max-width: 660px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 40px;
+            box-shadow: 0 20px 35px -12px rgba(0, 32, 0, 0.2);
+            overflow: hidden;
+            transition: all 0.2s;
+            border: 1px solid #cfe3cf;
+        }
+
+        /* 头部 */
+        .header {
+            background: #f0f9f0;
+            padding: 24px 20px 20px;
+            text-align: center;
+            border-bottom: 2px solid #bcdd9e;
+        }
+        .header h1 {
+            font-size: 1.9rem;
+            letter-spacing: -0.5px;
+            color: #1f4f1f;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1::before {
+            content: "🌿";
+            font-size: 1.7rem;
+        }
+        .header p {
+            color: #4a6a3a;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        /* 扫描线特效 (全局) */
+        .scan-line {
+            position: relative;
+            overflow: hidden;
+        }
+        .scan-line::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(80, 130, 80, 0.08) 0px, rgba(80, 130, 80, 0.08) 2px, transparent 2px, transparent 8px);
+            pointer-events: none;
+        }
+
+        .quiz-card {
+            padding: 24px 22px 32px;
+            background: white;
+        }
+
+        /* 开始界面 */
+        .start-screen, .result-screen {
+            text-align: center;
+        }
+        .start-screen h2 {
+            font-size: 1.5rem;
+            color: #2b5e2b;
+            border-left: 4px solid #88b04b;
+            padding-left: 16px;
+            text-align: left;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+        .start-screen p {
+            background: #f4faf4;
+            padding: 24px;
+            border-radius: 28px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #2e452a;
+            border: 1px solid #d4e8d4;
+            text-align: left;
+            margin-bottom: 28px;
+        }
+        .btn {
+            background: #5c8f4c;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 3px 0 #2f5527;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: #6fa85c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #2f5527;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #2f5527;
+        }
+
+        /* 题目区域 */
+        .question-area {
+            display: none;
+        }
+        .progress-bar {
+            height: 6px;
+            background: #e2ecd9;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #5c9e4e;
+            transition: width 0.2s;
+        }
+        .q-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 18px;
+        }
+        .q-counter {
+            background: #e2efda;
+            padding: 4px 14px;
+            border-radius: 60px;
+            color: #2f6b2f;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .q-text {
+            font-size: 1.35rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 16px 0 26px;
+            color: #1b3b1b;
+            background: #fcfef7;
+            padding: 20px 18px;
+            border-radius: 32px;
+            border: 1px solid #cbe3c3;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .option {
+            background: #fefef9;
+            border: 1px solid #cce3c2;
+            border-radius: 48px;
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .option:hover {
+            background: #eef6e9;
+            border-color: #98c278;
+        }
+        input[type="radio"] {
+            accent-color: #5f9e4a;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .option label {
+            flex: 1;
+            cursor: pointer;
+            font-weight: 500;
+            color: #2f4825;
+            line-height: 1.4;
+            font-size: 0.92rem;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: 12px;
+        }
+        .nav-btn {
+            background: #bed6ad;
+            box-shadow: 0 2px 0 #8aa97a;
+            color: #2a562a;
+            font-size: 0.9rem;
+            padding: 10px 18px;
+            flex: 1;
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        /* 结果页面 */
+        .result-screen {
+            display: none;
+        }
+        .result-content {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 12px 16px 20px;
+        }
+        .ascii-leaf {
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #7ba05b;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            white-space: pre;
+        }
+        .result-sub {
+            font-size: 1rem;
+            color: #4a6741;
+            margin-top: 6px;
+            margin-bottom: 8px;
+            font-style: italic;
+            text-align: center;
+        }
+        .result-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2d6a2d;
+            text-align: center;
+            margin: 10px 0 6px;
+            background: #eef5ea;
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 60px;
+            border: 2px solid #b8d9a4;
+        }
+        .match-rate {
+            background: #ecf5e5;
+            color: #3c6e2c;
+            padding: 8px 16px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin: 12px auto;
+            font-weight: 500;
+        }
+        .result-desc {
+            font-size: 0.96rem;
+            line-height: 1.55;
+            background: #fefef6;
+            padding: 22px 20px;
+            border-radius: 28px;
+            margin: 16px 0 18px;
+            border: 1px solid #dcebd2;
+            text-align: left;
+            color: #2e4128;
+        }
+        .screenshot-btn {
+            background: #6f9e58;
+            box-shadow: 0 2px 0 #426932;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            padding: 10px 22px;
+        }
+        .restart-btn {
+            background: #c0d6b2;
+            box-shadow: 0 2px 0 #9abb86;
+            color: #2d572d;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .disclaimer {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #92a982;
+            margin-top: 20px;
+            border-top: 1px solid #ddecd5;
+            padding-top: 14px;
+        }
+        footer {
+            background: #eef5e9;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.65rem;
+            color: #6f8f5e;
+            border-top: 1px solid #cfe2c4;
+        }
+
+        /* 手机适配 */
+        @media (max-width: 550px) {
+            .container { max-width: 100%; }
+            .q-text { font-size: 1.1rem; }
+            .result-title { font-size: 1.5rem; }
+            .option label { font-size: 0.8rem; }
+            .header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container scan-line" id="app">
+    <div class="header">
+        <h1>互联网人格探测仪</h1>
+        <p>赛博回声 · 暗号采样协议</p>
+    </div>
+    <div class="quiz-card">
+        <!-- 开始界面（不剧透具体结果） -->
+        <div id="startScreen" class="start-screen">
+            <h2>🌱 采样开始</h2>
+            <p>你每天在信息洪流中留下痕迹——点赞、复读、辩论、沉默。<br>
+            本探测仪将根据20道暗号，捕捉你赛博灵魂的独特频率，生成一份<strong>不可预料的人格报告</strong>。<br>
+            <br>
+            ✨ 共24种神秘互联网人格，绝不提前泄露。<br>
+            ✨ 仅供娱乐，请诚实作答，越离谱越真实。<br>
+            ✨ 每次测试随机抽题，结果独一无二。</p>
+            <button class="btn" id="startBtn">▶ 开始采样</button>
+        </div>
+
+        <!-- 题目区 -->
+        <div id="questionArea" class="question-area">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="q-meta">
+                <span class="q-counter" id="qCounter">第1 / 20题</span>
+                <span style="font-size:0.7rem;">⚡ 直觉点击</span>
+            </div>
+            <div class="q-text" id="questionText"></div>
+            <div class="options-list" id="optionsContainer"></div>
+            <div class="nav-buttons">
+                <button class="btn nav-btn" id="prevBtn">◀ 上一步</button>
+                <button class="btn nav-btn" id="nextBtn">下一步 ▶</button>
+            </div>
+            <div class="disclaimer">人格无高下，抽象即共鸣</div>
+        </div>
+
+        <!-- 结果区 -->
+        <div id="resultScreen" class="result-screen">
+            <div class="result-content" id="resultCaptureArea">
+                <div class="ascii-leaf">
+                    ╭───────────────────╮<br>
+                    │  赛博人格鉴定书   │<br>
+                    ╰───────────────────╯
+                </div>
+                <div class="result-sub">你的网络灵魂本质 ——</div>
+                <div style="text-align: center;"><div class="result-title" id="resultTitle"></div></div>
+                <div style="text-align: center;"><span class="match-rate" id="matchRate"></span></div>
+                <div class="result-desc" id="resultDesc"></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn screenshot-btn" id="screenshotBtn">📸 保存人格图鉴</button>
+                <button class="btn restart-btn" id="restartBtn">🔄 重新探测</button>
+            </div>
+            <div class="disclaimer">⚠️ 仅供娱乐，请保持友善冲浪</div>
+        </div>
+    </div>
+    <footer>白噪音频率 · 抽象人格非官方档案</footer>
+</div>
+
+<script>
+    // ----------------------------- 24种人格 (只用于内部, 不在开头显示) -----------------------------
+    const PERSONAS = [
+        "神人", "嘉豪", "贴吧老哥", "知友", "封矿的王座", "垃圾佬", "钓鱼佬", "牡丹",
+        "二次元婆罗门", "键盘侠", "扣帽子专业户", "笔电男大", "胶佬", "私宅", "搬屎大户",
+        "跟疯狗", "文艺b", "小南娘", "烂梗复读机", "乐子人", "理中客", "O批", "反二雅士", "区"
+    ];
+
+    const PERSONA_DESC = {
+        "神人": "你的每条发言都像从平行宇宙截的图，别人看不懂，你也解释不清。大家把你挂到抽象bot里当标本，你自己还跑去点赞。你说你在第五层，其实你在地下室。但你不在乎，神不需要凡人的理解。",
+        "嘉豪": "你开口就是“家人们谁懂啊”，弹幕看到你就头疼。你发誓这是最后一次刷嘉豪，五分钟后又在另一个直播间“嘉豪驾到”。你把互联网当自己家客厅，其实大家只想把你踢出群。",
+        "贴吧老哥": "你熟练使用流汗黄豆和“典急孝”，深夜在戒赌吧发“老哥稳”。现实里你连拼多多砍一刀都不敢找人，但在网上你敢跟人对线三天三夜。你的知识储备来自百度贴吧和营销号，但你觉得自己比教授还懂。",
+        "知友": "你开场必“谢邀，人在美国刚下飞机”，结尾“匿了，圈内人太多”。其实你人在鹤岗，刚下电瓶车。你编的故事点赞过万，但你连自己都不信。你最擅长的是在匿名回答下面写小作文。",
+        "封矿的王座": "你每天搬运十张国际共运梗图，签名是“全人类解放，先从拉黑右友开始”。你连小区垃圾分类都整不明白，但你对世界革命蓝图门儿清。你最大的成就是在群里把一个人骂退群了，然后宣布“又清除一个反动派”。",
+        "垃圾佬": "你蹲守闲鱼捡垃圾，用100块拼出一台能打CS1.6的主机。你发帖“流畅运行3A大作”，楼下问“扫雷也算3A？”你不在乎，捡漏的快乐高于一切。家里堆满电子破烂，但你觉得这是传家宝。",
+        "钓鱼佬": "你凌晨四点出发，晚上空手而归，但朋友圈永远是“今天口不错”。除了鱼，你什么都钓上来了——塑料袋、破鞋、还有一只迷路的鸭子。你坚信下次一定能爆护，装备越买越贵，鱼越钓越少。",
+        "牡丹": "你在网上给别人分析情感问题头头是道，现实中连异性的手都没碰过。你说“我只是不想谈，不是没人要”，我们都信了。你的恋爱经验全部来自贴吧和偶像剧，但你指导起别人来像情感教父。",
+        "二次元婆罗门": "你看过三部冷门番就自称婆罗门，逢人便说“现在的新番都是垃圾”。你硬盘里的里番更新得比新番还快，但你不承认。你最大的乐趣是在萌新问“有什么好看的”下面回复“你阅片量不够”。",
+        "键盘侠": "你在社会新闻评论区重拳出击，现实里被插队只敢小声嘀咕。你的键盘比你的拳头硬多了，你的正义感只存在于发送键按下之前。你骂完人心情舒畅，关掉手机继续吃泡面。",
+        "扣帽子专业户": "你说不过三句话就开始“你是XX吧”“你收钱了吧”“这味太冲了”。你脑袋上戴的不是帽子，是批发市场。你的逻辑是：只要给对方贴个标签，你就不用动脑子了，方便快捷。",
+        "笔电男大": "你背着拯救者去图书馆，打开电脑先调RGB跑马灯。你学习五分钟，贴吧两小时，电池撑不过一节课。你觉得背着游戏本走路带风，其实你的肩膀已经废了，绩点比帧率还低。",
+        "胶佬": "你买了一柜子高达，素组都不打磨水口，逢人便说“这是RG神物”。你妈以为你是收破烂的，你女朋友（如果有）觉得你花钱买塑料有病。你最大的成就是发帖“萌新第一个作品，轻喷”。",
+        "私宅": "你的手办柜比你的衣柜还干净，床单半年没洗但初音不能落灰。你妈敲门送饭是你一天唯一的社交，你和外卖小哥的关系比你和同学还熟。你觉得外面的人都很可怕，只有二次元老婆不会背叛你。",
+        "搬屎大户": "你把微博、贴吧、知乎的粪坑帖子搬到群里，配文“大家快看这个傻X”。群友回你“你不就是那个傻X？”你不在乎，你享受的是搬运的快感，是互联网的拾粪者，哪里有屎哪里就有你。",
+        "跟疯狗": "任何热点你都要蹭，昨天挺A今天骂A，明天又说“我早就说了”。你的立场比你的头发还少，你的原则是“谁火跟谁”。你永远站在胜利者那边，所以你也永远没有朋友。",
+        "文艺b": "你读了三页《荒原》就发朋友圈配咖啡，歌词截图当诗发。你的网易云年度报告比你的毕业论文还长，你的书架上全是没拆封的塑封。你说“生活不止眼前的苟且”，但你眼前的苟且就是你那堆没看完的书。",
+        "小南娘": "你在群里发腿照，备注“别问了，男的”。大家本来没兴趣，你这么一说反而想吐。你觉得自己在搞抽象艺术，其实你只是把滤镜开到了最大。你享受被关注的快感，哪怕关注是骂你的。",
+        "烂梗复读机": "你说“泰裤辣”说了三个月，玩“坤坤”梗玩到律师函都过期了。你的幽默感停留在2019年，你的网络梗库最后一次更新是疫情前。你每发一个烂梗，群友就沉默三秒，你觉得他们是没get到。",
+        "乐子人": "你说“我只想看到血流成河”，两边的架你都拱。其实你生活太无聊，连猫都不理你。你的快乐建立在别人的痛苦之上，但你觉得自己是清醒的。你是互联网的纵火犯，点完就跑，真刺激。",
+        "理中客": "你开口“抛开事实不谈”，然后各打五十大板。你谁都不得罪，所以谁都觉得你是傻X。你觉得自己在维护和平，其实你只是在和稀泥。你的座右铭是“都有问题”，等于什么都没说。",
+        "O批": "你走到哪都要刷“某二游怎么你了”，别人聊粮食安全你也能拐到璃月。你的大脑已经被天理啃了，你的输入法默认第一个词是“开放世界”。你说你不是魔怔人，但你连做梦都在刷圣遗物。",
+        "反二雅士": "你每天骂二次元，但你的B站收藏夹全是萝莉番。你的反二宣言是你最后的遮羞布，你骂得越狠，看得越欢。你说你是在“批判”，但你批判的方式是把每部番都看完然后打一分。",
+        "区": "你是互联网下水道的常住居民。你管自己叫“区”，别人也这么叫你，你不仅不生气还觉得挺亲切。你在粪坑里打滚，然后爬出来说“上面空气不好”。你最大的爱好是在各种烂帖里留下“区来了”。"
+    };
+
+    // ----------------------------- 70道情境题（避免“如何看待”，替换真实名称） -----------------------------
+    const MASTER_QUESTIONS = [
+        { text: "一条新闻评论区吵起来了，你通常会？", opts: ["直接开喷，先骂了再说", "写一段理性分析，结尾加'不喜勿喷'", "复制热评改几个字发上去", "只发一个'典'，深藏功与名"], mapping: [9,20,18,2] },
+        { text: "朋友在群里发了自拍，你忍不住评论？", opts: ["P得妈都不认了", "有对象吗？", "这角度不行，看我这张", "发一张流汗黄豆，+3告辞"], mapping: [17,7,16,2] },
+        { text: "刷到“一生必去十个地方”，你会？", opts: ["收藏，然后永远不去", "评论还不如去我家楼下公园", "转发家族群配文该出去走走了", "弹幕刷'抽象工作室到此一游'"], mapping: [16,5,3,0] },
+        { text: "深夜有点矫情，你会发什么？", opts: ["后来我学会了抽烟，也学会了不再等你", "人生啊，就像一场戏", "一张模糊夜景图，配文'无'", "发完两分钟后删掉，假装无事"], mapping: [7,16,19,0] },
+        { text: "在贴吧刷到明显钓鱼帖，你的反应？", opts: ["认真回复'楼主说得有道理'", "钓的是鱼，没的是🐎", "复制帖子去别的吧再发一遍", "在楼下刷'区来了'"], mapping: [2,6,14,23] },
+        { text: "看到有人晒新买的游戏主机，你会？", opts: ["这配置玩扫雷都卡", "不如我的拯救者RGB拉满", "我PS5已经吃灰三个月了", "不如省下来买胶"], mapping: [5,11,8,12] },
+        { text: "群里和人吵架占下风，你最后会？", opts: ["你成分不对，我不跟你说了", "行吧，你说得都对", "哈哈哈哈急了你急了", "直接退群，然后在小群里骂"], mapping: [10,20,19,9] },
+        { text: "刷到颜值类视频，评论区你会留？", opts: ["这腿我能玩一年", "求求你做个人吧，别发这种", "我老婆，拔刀吧", "嘉豪驾到！统统闪开"], mapping: [2,22,7,1] },
+        { text: "提到某款热门二游，你通常？", opts: ["国产之光，文化输出！", "抽卡骗氪，不如单机", "没玩过，但我知道都是缝合", "我肝了三个号，都退坑了"], mapping: [21,8,22,13] },
+        { text: "周末典型状态是？", opts: ["在家拼胶，一整天不说话", "凌晨四点去钓鱼，晚上空军", "背着游戏本去图书馆刷贴吧", "躺在床上刷短视频，一天不下床"], mapping: [12,6,11,13] },
+        { text: "看到社会热点事件，你会？", opts: ["转发到所有群，配文大家快看", "写分析，最后结论体制问题", "这国怎，定体问，我陷思", "正义可能会迟到，但永远不会缺席"], mapping: [14,4,19,20] },
+        { text: "逛二手平台看到'自用99新'，你？", opts: ["直接砍价一半", "问箱说全吗？拍个视频看看", "50包邮解君愁", "收藏，然后去找更便宜的"], mapping: [5,12,2,7] },
+        { text: "朋友失恋哭诉，你会？", opts: ["下一个更乖", "我写个帖子帮你分析", "哈哈哈哈活该", "发一个抱抱表情包，然后不回"], mapping: [7,3,19,15] },
+        { text: "B站刷到教学视频，你习惯？", opts: ["课代表：省流，啥也没说", "发弹幕'学会了吗？反正我没有'", "下次一定", "收藏到稍后再看，永远不看"], mapping: [2,18,1,16] },
+        { text: "对二次元文化的态度？", opts: ["我永远喜欢纸片人", "现充都爆炸吧", "一群死宅真恶心", "我老婆是02，你们都是牛头人"], mapping: [13,8,22,7] },
+        { text: "网上和人争论立场，你会？", opts: ["你读过资本论吗？", "抛开事实不谈，你们都有问题", "我劝你谨言慎行", "发一个'典'，然后拉黑"], mapping: [4,20,9,2] },
+        { text: "看到有人晒月薪5万，你心里？", opts: ["我在美国刚毕业也差不多", "假的，P图都不会", "我一年都赚不到这么多", "有什么好晒的，我家拆迁了"], mapping: [3,5,7,19] },
+        { text: "你最爱用的网络口头禅？", opts: ["家人们谁懂啊", "泰裤辣", "你是懂XX的", "区"], mapping: [1,18,2,23] },
+        { text: "手机相册里占比最多的是？", opts: ["表情包，5000张", "手办和胶的摆拍", "风景照和咖啡拉花", "截图，全是挂人素材"], mapping: [2,12,16,14] },
+        { text: "对'女装大佬'的看法？", opts: ["求求你别发了，我眼睛疼", "我可以，加个好友？", "不如我的腿", "这不比女人好看？"], mapping: [22,17,17,7] },
+        { text: "游戏偏好属于哪一类？", opts: ["开放世界抽卡", "MOBA，十年白银", "DOTA2，云玩家", "扫雷，3A大作"], mapping: [21,9,8,5] },
+        { text: "有人骂你喜欢的偶像，你会？", opts: ["你行你上啊", "写小作文维护，结果被扒反串", "你们都是黑子，我家哥哥最努力", "流汗黄豆，默默举报"], mapping: [9,15,7,2] },
+        { text: "对'躺平'的态度？", opts: ["我已经躺平了，不婚不育", "躺平是对内卷的反抗", "嘴上躺平，背地里比谁都卷", "躺平？我先卷死你们"], mapping: [0,4,20,11] },
+        { text: "最常逛的网络社区？", opts: ["贴吧，孙吧抗吧", "知乎，分享你刚编的故事", "小红书，看集美们吵架", "微博，看热搜吃瓜"], mapping: [2,3,15,14] },
+        { text: "对'钓鱼佬'的看法？", opts: ["除了鱼，什么都能钓到", "我空军我骄傲", "钓的是寂寞", "浪费时间，不如打游戏"], mapping: [6,6,16,11] },
+        { text: "关于母胎单身的想法？", opts: ["我单身我快乐，你们都是舔狗", "不是不想谈，是没人配得上", "单身久了看狗都眉清目秀", "我是二次元，不需要三次元"], mapping: [7,7,0,13] },
+        { text: "路上遇到穿lo裙的人，你会？", opts: ["好可爱，想认识", "有病吧，大白天出来吓人", "偷偷拍照发群里'今天遇到奇葩'", "上去问小裙子在哪买的"], mapping: [17,22,14,12] },
+        { text: "对'搬屎'行为的态度？", opts: ["我就是搬运工，大家一起乐", "这种行为纯属恶心人", "搬得好，我就爱看", "屎来屎去，你本身就是屎"], mapping: [14,20,19,23] },
+        { text: "你的朋友圈封面风格？", opts: ["黑白意境照", "高达或者EVA机体", "赚钱就是为了买胶", "流汗黄豆"], mapping: [16,12,12,2] },
+        { text: "关于'内卷'你怎么看？", opts: ["卷到最后就是死", "我卷我骄傲，你们都是废物", "内卷是因为资源分配不均", "别卷了，跟我一起钓鱼吧"], mapping: [4,11,3,6] },
+        { text: "最喜欢的抽象文化符号？", opts: ["孙笑川吧，我的精神家园", "李赣，永远的神", "我是成都区，你是哪个区？", "家人们，谁懂啊"], mapping: [2,19,23,1] },
+        { text: "看到全网跟风挑战，你会？", opts: ["立刻参与并发到所有群", "跟风狗真恶心", "看完就划走，但心里想我也能行", "评论区刷'抽象玩家发来贺电'"], mapping: [15,22,7,0] },
+        { text: "怎么评价'键盘侠'现象？", opts: ["我就是键盘侠，怎么着吧", "网上重拳出击，现实唯唯诺诺", "键盘侠也是侠，至少比冷漠强", "一群怂包，只敢在网上叫"], mapping: [9,20,0,2] },
+        { text: "最喜欢的UP主类别？", opts: ["游戏区，抽象游戏", "知识区，听君一席话", "生活区，看别人过好日子", "二次元区，MMD"], mapping: [19,3,7,13] },
+        { text: "如何定义'乐子人'？", opts: ["我就是乐子人，只想看血流成河", "乐子人最恶心，没有立场", "乐子人至少比魔怔人强", "我也是乐子人，但我只乐别人"], mapping: [19,20,2,15] },
+        { text: "刷到'30岁一事无成'帖，你回？", opts: ["我35了还在还房贷，你不是一个人", "加油，明天会更好", "活该，谁让你不努力", "来跟我一起钓鱼吧，钓完就不想了"], mapping: [7,16,9,6] },
+        { text: "提到'魔怔人'你第一反应？", opts: ["魔怔人怎么你了", "一群魔怔人，玩出优越感", "其实我也魔怔，但我不说话", "魔怔比麻木强"], mapping: [21,22,13,0] },
+        { text: "你常用的语气词？", opts: ["典急孝乐麻", "家人们", "哈哈哈", "啊对对对"], mapping: [2,1,19,20] },
+        { text: "如何看待'垃圾佬'文化？", opts: ["我也是垃圾佬，捡垃圾使我快乐", "穷就穷，说什么垃圾佬", "这是一种生活态度", "我也想要捡到宝"], mapping: [5,9,0,7] },
+        { text: "对'私宅'的看法？", opts: ["我就是私宅，我骄傲", "死宅真恶心", "私宅至少不出去祸害社会", "我也是私宅，但我有老婆(手办)"], mapping: [13,22,20,12] },
+        { text: "你心中的神级网络迷因？", opts: ["不要停下来啊", "你脸红个泡泡茶壶", "我佛了", "这波啊，这波是肉蛋葱鸡"], mapping: [18,2,0,19] },
+        { text: "对'文艺b'的态度？", opts: ["我就是文艺b，我装我乐意", "一群无病呻吟的矫情怪", "文艺总比粗俗好", "我也曾文艺过，直到我学会了钓鱼"], mapping: [16,9,20,6] },
+        { text: "跟风热门事件，你？", opts: ["我就是跟风狗，我快乐", "跟风狗没有脑子", "跟风是人的天性，你不跟风你装什么", "我跟风，但我跟的是抽象风"], mapping: [15,22,2,0] },
+        { text: "看到'小南娘'内容，你？", opts: ["我爱看，多发点", "恶心，滚出克", "我也想像他们一样勇敢", "这是文化，你们不懂"], mapping: [17,22,7,16] },
+        { text: "对'二次元婆罗门'的看法？", opts: ["我就是婆罗门，你们都是贱民", "一群看个动画片看出优越感的傻X", "婆罗门至少比萌二强", "我也是婆罗门，但我只看里番"], mapping: [8,22,2,13] },
+        { text: "争论时对方扣你帽子，你会？", opts: ["你就是XX，不用解释了", "扣帽子是最低级的辩论手段", "扣得好，我就爱看扣帽子", "帽子扣多了，自己头上也全是帽子"], mapping: [10,20,19,0] },
+        { text: "对'背着游戏本去图书馆'的人？", opts: ["我就是，背着拯救者去图书馆", "装逼犯，真学习的人不带游戏本", "我也干过，后来肩膀废了", "至少人家去图书馆了，我连门都不出"], mapping: [11,9,5,13] },
+        { text: "胶佬日常，你觉得？", opts: ["拼胶使我快乐，素组不打磨", "花大价钱买塑料的傻子", "我也想入坑，但没钱", "胶佬比鞋狗好，至少不臭"], mapping: [12,9,7,2] },
+        { text: "关于'知乎体'？", opts: ["谢邀，人在美国", "分享你刚编的故事", "知乎现在全是编的，早就不看了", "我在知乎有10万粉，你们呢"], mapping: [3,2,15,3] },
+        { text: "贴吧老哥刻板印象？", opts: ["我就是，流汗黄豆本体", "一群低素质网民", "贴吧老哥才是真正的互联网精神", "我在贴吧签到1200天了，+3"], mapping: [2,22,0,2] },
+        { text: "遇见'神人'发言，你？", opts: ["我就是神，你们都是凡人", "抽象到无法理解", "神人是我爹", "我也想做神人，但我不够抽象"], mapping: [0,20,19,2] },
+        { text: "对'嘉豪'刷屏的反应？", opts: ["嘉豪驾到！家人们谁懂啊", "求求你别刷了", "我也叫嘉豪，但我不刷", "嘉豪是抽象新神"], mapping: [1,22,7,19] },
+        { text: "关于母胎单身的自嘲？", opts: ["我就是牡丹，我骄傲", "牡丹至少比舔狗强", "牡丹也是花，总会开的", "牡丹就是没人要，别自我安慰了"], mapping: [7,0,16,9] },
+        { text: "对'钓鱼佬永不空军'的理解？", opts: ["除了鱼，我什么都能钓到", "空军是常态，爆护是意外", "钓鱼佬永不空军", "我也想钓鱼，但我连鱼竿都没有"], mapping: [6,6,2,7] },
+        { text: "垃圾佬的快乐源泉？", opts: ["垃圾佬的快乐你想象不到", "其实就是穷开心", "电子垃圾也是宝", "我也想像垃圾佬那样淘到神机"], mapping: [5,9,5,7] },
+        { text: "看到'退网宣言'，你觉得？", opts: ["江湖再见，注销了", "又来了，下个月就回来", "快走吧没人留你", "退网表演艺术家，每月一次"], mapping: [0,15,9,0] },
+        { text: "对'电子厂打工人'梗的态度？", opts: ["拧螺丝的命，刷快手的病", "真实写照，笑不出来", "我也在流水线，但我不发抖音", "比我强，至少有事做"], mapping: [0,20,13,7] },
+        { text: "深夜刷到'人生意义'，你会？", opts: ["收藏，以后慢慢想", "评论区写小作文", "划走，继续刷搞笑视频", "转发到群里问老哥们"], mapping: [16,3,19,2] },
+        { text: "遇到'挑战全网最抽象'，你？", opts: ["参与，我才是最抽象的", "围观，看看能有多抽象", "刷'区'就完事了", "反手举报低俗"], mapping: [0,19,23,22] },
+        { text: "对'戒社'文化的看法？", opts: ["收藏戒赌帖，继续网贷", "意志力是假的，欲望是真的", "成功戒了三天，又复发了", "都是骗流量的"], mapping: [0,20,5,9] },
+        { text: "朋友发'在吗'，你会？", opts: ["直接回'不在'", "隔一天回'？'", "已读不回", "发一张流汗黄豆"], mapping: [19,2,7,2] },
+        { text: "对'赛博顶真'的观感？", opts: ["抽象艺术巅峰", "跟风狗而已", "不如原版顶真", "我也是赛博顶真，我自豪"], mapping: [0,15,21,0] },
+        { text: "看到'考研上岸'喜报，你？", opts: ["恭喜，沾沾喜气", "跟我没关系", "我也快了，明年就是我", "考研不如考公"], mapping: [7,19,11,4] },
+        { text: "对网恋的看法？", opts: ["网恋教父，同时聊五个", "奔现必翻车", "我对象就是网上认识的（已奔现）", "网恋不如纸片人"], mapping: [7,20,7,13] },
+        { text: "你最常用的表情包风格？", opts: ["流汗黄豆/弱智吧", "猫猫狗狗萌系", "动漫截图", "抽象熊猫头"], mapping: [2,16,13,0] },
+        { text: "提到某二游，你一般？", opts: ["文化输出，永远的神", "抽卡骗氪，不如单机", "没玩过，但我知道都是缝合", "我肝了三个号，都退坑了"], mapping: [21,8,22,13] }
+    ];
+
+    // 随机抽20题
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let quizActive = false;
+    let autoTimer = null;
+
+    const startScreen = document.getElementById('startScreen');
+    const questionArea = document.getElementById('questionArea');
+    const resultScreen = document.getElementById('resultScreen');
+    const startBtn = document.getElementById('startBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const screenshotBtn = document.getElementById('screenshotBtn');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const qCounterSpan = document.getElementById('qCounter');
+    const progressFill = document.getElementById('progressFill');
+
+    function shufflePick() {
+        const shuffled = [...MASTER_QUESTIONS];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, 20).map(q => ({
+            text: q.text,
+            opts: [...q.opts],
+            mapping: [...q.mapping],
+            selectedIdx: null
+        }));
+    }
+
+    function clearTimer() { if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } }
+
+    function renderQuestion() {
+        if (!quizActive) return;
+        const q = currentQuestions[currentIndex];
+        questionText.innerText = q.text;
+        let optsHtml = '';
+        q.opts.forEach((opt, idx) => {
+            const isChecked = (q.selectedIdx === idx);
+            const letter = String.fromCharCode(65+idx);
+            optsHtml += `
+                <div class="option" data-opt-index="${idx}">
+                    <input type="radio" name="qOption" id="opt_${idx}" value="${idx}" ${isChecked ? 'checked' : ''}>
+                    <label for="opt_${idx}"><strong>${letter}.</strong> ${opt}</label>
+                </div>
+            `;
+        });
+        optionsContainer.innerHTML = optsHtml;
+        document.querySelectorAll('.option').forEach(div => {
+            const radio = div.querySelector('input');
+            const idxVal = parseInt(div.dataset.optIndex);
+            const handleChange = () => {
+                if (!radio.checked) {
+                    radio.checked = true;
+                    currentQuestions[currentIndex].selectedIdx = idxVal;
+                    clearTimer();
+                    autoTimer = setTimeout(() => {
+                        if (quizActive) {
+                            if (currentIndex < 19) goNextAuto();
+                            else computeFinalResult();
+                        }
+                    }, 180);
+                }
+            };
+            div.addEventListener('click', handleChange);
+            if (radio) radio.addEventListener('change', (e) => {
+                if (radio.checked) {
+                    currentQuestions[currentIndex].selectedIdx = idxVal;
+                    clearTimer();
+                    autoTimer = setTimeout(() => {
+                        if (quizActive) {
+                            if (currentIndex < 19) goNextAuto();
+                            else computeFinalResult();
+                        }
+                    }, 180);
+                }
+            });
+        });
+        qCounterSpan.innerText = `第${currentIndex+1} / 20题`;
+        progressFill.style.width = `${((currentIndex+1)/20)*100}%`;
+        prevBtn.disabled = (currentIndex === 0);
+        nextBtn.disabled = false;
+    }
+
+    function goPrev() { if (!quizActive) return; clearTimer(); if (currentIndex > 0) { currentIndex--; renderQuestion(); } }
+    function goNext() {
+        if (!quizActive) return;
+        if (currentQuestions[currentIndex].selectedIdx === null) { alert("请先选择一个选项"); return; }
+        clearTimer();
+        if (currentIndex < 19) { currentIndex++; renderQuestion(); }
+        else computeFinalResult();
+    }
+    function goNextAuto() { if (currentIndex < 19) { currentIndex++; renderQuestion(); } else computeFinalResult(); }
+
+    function computeFinalResult() {
+        clearTimer();
+        const scoreArr = new Array(24).fill(0);
+        for (let q of currentQuestions) {
+            if (q.selectedIdx !== null) scoreArr[q.mapping[q.selectedIdx]]++;
+        }
+        let maxScore = -1, bestIdx = 0;
+        for (let i=0;i<24;i++) if (scoreArr[i] > maxScore) { maxScore = scoreArr[i]; bestIdx = i; }
+        const totalValid = currentQuestions.filter(q=>q.selectedIdx!==null).length;
+        const matchPercent = totalValid===0?0:Math.round((maxScore/totalValid)*100);
+        const personaKey = PERSONAS[bestIdx];
+        document.getElementById('resultTitle').innerText = personaKey;
+        document.getElementById('matchRate').innerHTML = `相符程度 ▸ ${matchPercent}% 抽象纯度`;
+        document.getElementById('resultDesc').innerHTML = PERSONA_DESC[personaKey];
+        startScreen.style.display = 'none';
+        questionArea.style.display = 'none';
+        resultScreen.style.display = 'block';
+        quizActive = false;
+    }
+
+    function captureResult() {
+        const el = document.getElementById('resultCaptureArea');
+        if (!el) return;
+        html2canvas(el, { scale: 2, backgroundColor: '#ffffff', logging: false }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `人格报告_${new Date().toISOString().slice(0,19)}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }).catch(()=>alert("截图失败，可重试"));
+    }
+
+    function startTest() {
+        clearTimer();
+        currentQuestions = shufflePick();
+        currentIndex = 0;
+        quizActive = true;
+        startScreen.style.display = 'none';
+        questionArea.style.display = 'block';
+        resultScreen.style.display = 'none';
+        renderQuestion();
+    }
+    function restart() { startTest(); }
+
+    startBtn.addEventListener('click', startTest);
+    prevBtn.addEventListener('click', goPrev);
+    nextBtn.addEventListener('click', goNext);
+    restartBtn.addEventListener('click', restart);
+    if (screenshotBtn) screenshotBtn.addEventListener('click', captureResult);
+</script>
+</body>
+</html>
